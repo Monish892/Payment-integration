@@ -1,7 +1,7 @@
 
-import React, { useState } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import "./index.css"
-import QrReader from 'react-qr-reader'
+import { Html5Qrcode } from "html5-qrcode"
 
 export default function App() {
   const [amount, setAmount] = useState("250")
@@ -67,6 +67,38 @@ export default function App() {
     setIsScanning(false)
   }
 
+  const html5QrRef = useRef(null)
+
+  useEffect(() => {
+    let mounted = true
+    if (!isScanning) return
+    const targetId = "qr-reader"
+    const scanner = new Html5Qrcode(targetId)
+    html5QrRef.current = scanner
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      (decodedText, decodedResult) => {
+        if (!mounted) return
+        handleScan(decodedText)
+      },
+      (errorMessage) => {
+        // console.debug('qr error', errorMessage)
+      }
+    ).catch(err => {
+      handleError(err)
+    })
+
+    return () => {
+      mounted = false
+      if (html5QrRef.current) {
+        html5QrRef.current.stop().then(() => {
+          html5QrRef.current.clear().catch(()=>{})
+        }).catch(()=>{})
+      }
+    }
+  }, [isScanning])
+
   return (
     <div className="app-root">
       {!showSuccess && !hasScanned && (
@@ -82,13 +114,7 @@ export default function App() {
 
             {isScanning && (
               <div className="qr-reader-wrap">
-                <QrReader
-                  delay={300}
-                  onError={handleError}
-                  onScan={handleScan}
-                  style={{ width: '100%' }}
-                  facingMode="environment"
-                />
+                <div id="qr-reader" style={{ width: '100%' }} />
               </div>
             )}
           </div>
