@@ -1,28 +1,98 @@
-
-body { font-family: Arial, Helvetica, sans-serif; background:#f1f3f4 }
+body { font-family: 'Google Sans', 'Roboto', Arial, sans-serif; background:#f1f3f4 }
 .container { max-width:420px; margin:40px auto; background:#fff; padding:20px; border-radius:12px }
-.pay-btn { width:100%; background:#1a73e8; color:white; padding:12px; border:none; border-radius:8px; font-weight:600 }
+.pay-btn { width:100%; background:#1a73e8; color:white; padding:12px; border:none; border-radius:8px; font-weight:600; cursor:pointer }
 input { width:100%; padding:10px; margin:10px 0; border-radius:8px; border:1px solid #ddd }
 .success { color:green } .failed{color:red} .pending{color:orange}
 .disclaimer { font-size:12px; color:#666 }
 
-/* Success overlay and animations */
+/* Processing animation overlay */
+.processing-overlay {
+	position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+	background:#000000;
+	z-index:9998; -webkit-tap-highlight-color:transparent;
+}
+
+.processing-content {
+	display:flex;
+	flex-direction:column;
+	align-items:center;
+	gap:24px;
+}
+
+.spinner-container {
+	position:relative;
+	width:80px;
+	height:80px;
+}
+
+.spinner {
+	width:80px;
+	height:80px;
+	border:4px solid rgba(129,181,255,0.2);
+	border-top:4px solid rgba(129,181,255,1);
+	border-radius:50%;
+	animation:spin 1s linear infinite;
+}
+
+@keyframes spin {
+	0% { transform:rotate(0deg) }
+	100% { transform:rotate(360deg) }
+}
+
+.processing-text {
+	font-size:18px;
+	color:#ffffff;
+	font-weight:500;
+	animation:pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+	0%, 100% { opacity:1 }
+	50% { opacity:0.6 }
+}
+
+/* Success overlay and animations - BLACK BACKGROUND */
 .success-overlay {
-	position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.24); z-index:9999; -webkit-tap-highlight-color:transparent;
+	position:fixed; inset:0; display:flex; align-items:center; justify-content:center; 
+	background:#000000;
+	z-index:9999; -webkit-tap-highlight-color:transparent;
 }
 .success-card {
-	width:360px; max-width:92%; background:#fff; border-radius:12px; display:flex; flex-direction:column; align-items:center; gap:18px; padding:22px 18px; pointer-events:auto; box-shadow:0 8px 24px rgba(0,0,0,0.12)
+	width:100%; height:100vh; max-width:none; background:transparent; border-radius:0; 
+	display:flex; flex-direction:column; align-items:center; 
+	gap:0; padding:0; pointer-events:auto; box-shadow:none;
+	position:relative;
 }
-.anim-wrap { display:flex; align-items:center; justify-content:center; height:160px; width:160px }
+.anim-wrap { 
+	display:flex; align-items:center; justify-content:center; 
+	height:140px; width:140px; 
+	position:absolute;
+	top:15vh;
+}
 
-.tick-svg { display:block; width:120px; height:120px }
-.bg-circle { transform-origin:50% 50%; transform:scale(.6); animation:popScale 300ms cubic-bezier(.2,.9,.2,1) forwards }
-.stroke-circle { transform-origin:50% 50%; stroke:#ffffff; stroke-width:6; stroke-linecap:round; animation:strokeDraw 400ms ease forwards; animation-delay:300ms }
-.tick { stroke:#fff; stroke-width:6; stroke-linecap:round; stroke-linejoin:round; animation:tickDraw 400ms ease forwards; animation-delay:340ms }
+.tick-svg { display:block; width:140px; height:140px }
+.bg-circle { 
+	transform-origin:50% 50%; 
+	transform:scale(0); 
+	animation:popScale 400ms cubic-bezier(.2,.9,.2,1) forwards; 
+	fill:#3d8af7;
+}
+.stroke-circle { display:none }
+.tick { 
+	stroke:#fff; 
+	stroke-width:7; 
+	stroke-linecap:round; 
+	stroke-linejoin:round; 
+	stroke-dasharray:80;
+	stroke-dashoffset:80;
+	animation:tickDraw 400ms ease forwards; 
+	animation-delay:200ms;
+}
 
 @keyframes popScale {
-	from { transform:scale(.6); opacity:0 }
-	to { transform:scale(1); opacity:1 }
+	0% { transform:scale(0); opacity:0 }
+	50% { transform:scale(1.1); opacity:1 }
+	100% { transform:scale(1); opacity:1 }
 }
 
 @keyframes strokeDraw {
@@ -35,19 +105,121 @@ input { width:100%; padding:10px; margin:10px 0; border-radius:8px; border:1px s
 	to { stroke-dashoffset:0 }
 }
 
-.texts { text-align:center; display:flex; flex-direction:column; gap:6px; margin-top:4px; opacity:0; transform:translateY(8px); animation:textFade 500ms ease forwards; animation-delay:700ms }
-.primary { font-weight:700; font-size:18px; color:#111 }
-.amount { font-weight:800; font-size:20px; color:#111 }
-.payee { font-weight:500; font-size:14px; color:#111 }
-.tertiary { font-weight:500; font-size:12px; color:#666 }
-.timestamp { font-size:12px; color:#888 }
+.texts { 
+	text-align:center; 
+	display:flex; 
+	flex-direction:column; 
+	gap:12px; 
+	position:absolute;
+	top:calc(15vh + 180px);
+	width:100%;
+	padding:0 24px;
+	opacity:0; 
+	transform:translateY(8px); 
+	animation:textFade 500ms ease forwards; 
+	animation-delay:600ms;
+}
+.primary { display:none }
+.amount { font-weight:400; font-size:48px; color:#ffffff; letter-spacing:-0.5px }
+.payee { font-weight:400; font-size:20px; color:#ffffff; margin-top:24px; }
+.tertiary { font-weight:400; font-size:16px; color:rgba(255,255,255,0.8); margin-top:4px; }
+.timestamp { font-size:16px; color:rgba(255,255,255,0.8); margin-top:8px; }
 
 @keyframes textFade {
 	from { opacity:0; transform:translateY(8px) }
 	to { opacity:1; transform:translateY(0) }
 }
 
-.done-btn { width:100%; max-width:320px; border-radius:24px; background:#1a73e8; color:#fff; padding:14px 18px; border:none; font-weight:700; margin-top:12px; opacity:0; transform:translateY(8px); animation:buttonAppear 300ms ease forwards; animation-delay:1200ms }
+/* UPI branding logo */
+.upi-branding {
+	position:absolute;
+	bottom:140px;
+	display:flex;
+	flex-direction:column;
+	align-items:center;
+	gap:4px;
+	opacity:0;
+	animation:textFade 500ms ease forwards;
+	animation-delay:800ms;
+}
+
+.powered-by {
+	font-size:11px;
+	color:rgba(255,255,255,0.6);
+	font-weight:500;
+	letter-spacing:0.5px;
+	text-transform:uppercase;
+}
+
+.upi-logo {
+	font-size:32px;
+	font-weight:800;
+	color:#ffffff;
+	letter-spacing:2px;
+	font-style:italic;
+	font-family:'Arial Black', sans-serif;
+}
+
+/* Bottom action buttons */
+.bottom-actions {
+	position:absolute;
+	bottom:32px;
+	width:100%;
+	padding:0 20px;
+	display:flex;
+	gap:12px;
+	justify-content:center;
+	align-items:center;
+	opacity:0;
+	transform:translateY(8px);
+	animation:buttonAppear 300ms ease forwards;
+	animation-delay:1000ms;
+}
+
+.share-btn {
+	flex:1;
+	max-width:220px;
+	border-radius:24px;
+	background:transparent;
+	color:#ffffff;
+	padding:13px 20px;
+	border:1.5px solid rgba(255,255,255,0.3);
+	font-weight:600;
+	font-size:15px;
+	cursor:pointer;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	gap:8px;
+	transition:all 0.2s;
+}
+
+.share-btn:hover {
+	background:rgba(255,255,255,0.1);
+	border-color:rgba(255,255,255,0.5);
+}
+
+.share-icon {
+	font-size:18px;
+}
+
+.done-btn { 
+	flex:0 0 auto;
+	min-width:120px;
+	border-radius:24px;
+	background:rgba(129,181,255,1);
+	color:#001d35;
+	padding:13px 44px;
+	border:none;
+	font-weight:600;
+	font-size:15px;
+	cursor:pointer;
+	transition:all 0.2s;
+}
+
+.done-btn:hover {
+	background:rgba(149,201,255,1);
+}
 
 @keyframes buttonAppear {
 	from { opacity:0; transform:translateY(8px) }
@@ -62,6 +234,7 @@ body.modal-open { overflow:hidden }
 /* Accessibility: ensure overlay traps pointer events */
 .success-overlay { pointer-events:auto }
 .success-overlay * { -webkit-user-select:none; user-select:none }
+.processing-overlay { pointer-events:auto }
 
 /* Scan QR screen */
 .scan-container { max-width:420px; margin:36px auto; background:#fff; padding:20px; border-radius:12px; display:flex; flex-direction:column; gap:16px; align-items:center }
@@ -91,29 +264,20 @@ body.modal-open { overflow:hidden }
 	.container { margin:20px 12px; padding:16px }
 	.scan-container { margin:18px 12px; padding:16px }
 	.camera-placeholder { width:92%; height:240px }
-	.tick-svg { width:100px; height:100px }
-	.anim-wrap { height:120px; width:120px }
-	.primary { font-size:16px }
-	.amount { font-size:18px }
-	.payee { font-size:13px }
-	.done-btn, .pay-btn { padding:14px; border-radius:20px }
-	.texts { gap:4px }
-	.success-card { padding:18px }
-
-	/* Make success modal full-screen on small devices */
-	.success-overlay { align-items:stretch; padding:0 0; }
-	.success-card {
-		width:100%;
-		height:100vh;
-		max-width:none;
-		border-radius:0;
-		margin:0;
-		padding:22px 18px;
-		box-shadow:none;
-		display:flex;
-		flex-direction:column;
-		justify-content:space-between;
-	}
-	.anim-wrap { height:100px; width:100px; margin-top:8px }
-	.done-btn { position:sticky; bottom:18px; width:100%; max-width:none }
+	.tick-svg { width:120px; height:120px }
+	.anim-wrap { height:120px; width:120px; top:12vh }
+	.texts { top:calc(12vh + 160px); gap:10px }
+	.amount { font-size:44px }
+	.payee { font-size:18px }
+	.tertiary { font-size:15px }
+	.timestamp { font-size:15px }
+	.upi-branding { bottom:125px }
+	.upi-logo { font-size:28px }
+	.powered-by { font-size:10px }
+	.bottom-actions { bottom:28px; padding:0 16px; gap:10px }
+	.share-btn { padding:12px 18px; font-size:14px; max-width:200px }
+	.done-btn { padding:12px 36px; font-size:14px; min-width:110px }
+	.spinner-container { width:60px; height:60px }
+	.spinner { width:60px; height:60px; border-width:3px }
+	.processing-text { font-size:16px }
 }
