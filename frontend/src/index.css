@@ -1,9 +1,4 @@
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  background: #000;
-}
+
 
 
 body { font-family: 'Google Sans', 'Roboto', Arial, sans-serif; background:#f1f3f4 }
