@@ -1,0 +1,102 @@
+
+body { font-family: Arial, Helvetica, sans-serif; background:#f1f3f4 }
+.container { max-width:420px; margin:40px auto; background:#fff; padding:20px; border-radius:12px }
+.pay-btn { width:100%; background:#1a73e8; color:white; padding:12px; border:none; border-radius:8px; font-weight:600 }
+input { width:100%; padding:10px; margin:10px 0; border-radius:8px; border:1px solid #ddd }
+.success { color:green } .failed{color:red} .pending{color:orange}
+.disclaimer { font-size:12px; color:#666 }
+
+/* Success overlay and animations */
+.success-overlay {
+	position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.24); z-index:9999; -webkit-tap-highlight-color:transparent;
+}
+.success-card {
+	width:360px; max-width:92%; background:#fff; border-radius:12px; display:flex; flex-direction:column; align-items:center; gap:18px; padding:22px 18px; pointer-events:auto; box-shadow:0 8px 24px rgba(0,0,0,0.12)
+}
+.anim-wrap { display:flex; align-items:center; justify-content:center; height:160px; width:160px }
+
+.tick-svg { display:block; width:120px; height:120px }
+.bg-circle { transform-origin:50% 50%; transform:scale(.6); animation:popScale 300ms cubic-bezier(.2,.9,.2,1) forwards }
+.stroke-circle { transform-origin:50% 50%; stroke:#ffffff; stroke-width:6; stroke-linecap:round; animation:strokeDraw 400ms ease forwards; animation-delay:300ms }
+.tick { stroke:#fff; stroke-width:6; stroke-linecap:round; stroke-linejoin:round; animation:tickDraw 400ms ease forwards; animation-delay:340ms }
+
+@keyframes popScale {
+	from { transform:scale(.6); opacity:0 }
+	to { transform:scale(1); opacity:1 }
+}
+
+@keyframes strokeDraw {
+	from { stroke-dashoffset:302 }
+	to { stroke-dashoffset:0 }
+}
+
+@keyframes tickDraw {
+	from { stroke-dashoffset:80 }
+	to { stroke-dashoffset:0 }
+}
+
+.texts { text-align:center; display:flex; flex-direction:column; gap:6px; margin-top:4px; opacity:0; transform:translateY(8px); animation:textFade 500ms ease forwards; animation-delay:700ms }
+.primary { font-weight:700; font-size:18px; color:#111 }
+.amount { font-weight:800; font-size:20px; color:#111 }
+.payee { font-weight:500; font-size:14px; color:#111 }
+.tertiary { font-weight:500; font-size:12px; color:#666 }
+.timestamp { font-size:12px; color:#888 }
+
+@keyframes textFade {
+	from { opacity:0; transform:translateY(8px) }
+	to { opacity:1; transform:translateY(0) }
+}
+
+.done-btn { width:100%; max-width:320px; border-radius:24px; background:#1a73e8; color:#fff; padding:14px 18px; border:none; font-weight:700; margin-top:12px; opacity:0; transform:translateY(8px); animation:buttonAppear 300ms ease forwards; animation-delay:1200ms }
+
+@keyframes buttonAppear {
+	from { opacity:0; transform:translateY(8px) }
+	to { opacity:1; transform:translateY(0) }
+}
+
+.demo-disclaimer { font-size:12px; color:#777; margin-top:10px; text-align:center }
+
+/* Prevent interaction behind overlay */
+body.modal-open { overflow:hidden }
+
+/* Accessibility: ensure overlay traps pointer events */
+.success-overlay { pointer-events:auto }
+.success-overlay * { -webkit-user-select:none; user-select:none }
+
+/* Scan QR screen */
+.scan-container { max-width:420px; margin:36px auto; background:#fff; padding:20px; border-radius:12px; display:flex; flex-direction:column; gap:16px; align-items:center }
+.camera-placeholder { width:320px; height:320px; border-radius:18px; border:2px dashed #d0d7de; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent) }
+.camera-icon { font-size:40px }
+.scan-instruction { margin-top:10px; color:#666; font-size:14px }
+.scan-actions { width:100%; display:flex; gap:10px; flex-direction:column }
+.pay-btn.small { background:#e8f0fe; color:#1a73e8; font-weight:700; border-radius:8px; padding:10px }
+
+/* Scanning animation */
+.camera-placeholder { position:relative; overflow:hidden }
+.scan-overlay { position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:center; pointer-events:none }
+.scan-line { width:90%; height:5px; background:linear-gradient(90deg, rgba(0,0,0,0.0), rgba(26,115,232,0.95), rgba(0,0,0,0.0)); box-shadow:0 0 12px rgba(26,115,232,0.75); animation:scanMove 1.2s linear infinite }
+.scanning-label { position:relative; margin-top:10px; color:#1a73e8; font-weight:700 }
+
+.qr-reader-wrap { width:100%; height:100%; display:flex; align-items:center; justify-content:center }
+.qr-reader-wrap video, .qr-reader-wrap canvas { width:100% !important; height:100% !important; object-fit:cover }
+
+@keyframes scanMove {
+	0% { transform:translateY(-140%) }
+	50% { transform:translateY(40%) }
+	100% { transform:translateY(140%) }
+}
+
+/* Responsive tweaks for small screens */
+@media (max-width:480px) {
+	.container { margin:20px 12px; padding:16px }
+	.scan-container { margin:18px 12px; padding:16px }
+	.camera-placeholder { width:92%; height:240px }
+	.tick-svg { width:100px; height:100px }
+	.anim-wrap { height:120px; width:120px }
+	.primary { font-size:16px }
+	.amount { font-size:18px }
+	.payee { font-size:13px }
+	.done-btn, .pay-btn { padding:14px; border-radius:20px }
+	.texts { gap:4px }
+	.success-card { padding:18px }
+}
