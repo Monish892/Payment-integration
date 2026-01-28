@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react"
 import "./index.css"
 import { Html5Qrcode } from "html5-qrcode"
@@ -160,13 +159,25 @@ export default function App() {
 }
 
 function PaymentSuccess({ amount, payeeName, txnId, timestamp, onDone }) {
+  const handleShare = () => {
+    // Implement share functionality
+    if (navigator.share) {
+      navigator.share({
+        title: 'Payment Receipt',
+        text: `Paid ₹${amount} to ${payeeName} via UPI`,
+      }).catch(err => console.log('Share failed', err))
+    } else {
+      alert('Payment receipt: ₹' + amount + ' paid to ' + payeeName)
+    }
+  }
+
   return (
     <div className="success-overlay" role="dialog" aria-modal="true">
       <div className="success-card">
         <div className="anim-wrap">
           <svg className="tick-svg" width="160" height="160" viewBox="0 0 120 120">
             <g transform="translate(60,60)">
-              <circle className="bg-circle" r="48" fill="#1DB954" />
+              <circle className="bg-circle" r="48" fill="#3d8af7" />
               <circle className="stroke-circle" r="48" fill="none" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" strokeDasharray="302" strokeDashoffset="302" />
               <path className="tick" d="M-18 2 L-4 14 L22 -14" fill="none" stroke="#fff" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="80" strokeDashoffset="80" />
             </g>
@@ -181,7 +192,18 @@ function PaymentSuccess({ amount, payeeName, txnId, timestamp, onDone }) {
           <div className="timestamp">{timestamp}</div>
         </div>
 
-        <button className="done-btn" onClick={onDone}>Done</button>
+        <div className="upi-branding">
+          <div className="powered-by">POWERED BY</div>
+          <div className="upi-logo">UPI</div>
+        </div>
+
+        <div className="bottom-actions">
+          <button className="share-btn" onClick={handleShare}>
+            <span className="share-icon">⎘</span>
+            <span>Share screenshot</span>
+          </button>
+          <button className="done-btn" onClick={onDone}>Done</button>
+        </div>
       </div>
     </div>
   )
