@@ -3,12 +3,14 @@ import "./index.css"
 import { Html5Qrcode } from "html5-qrcode"
 
 export default function App() {
-  const [amount, setAmount] = useState("250")
-  const [merchant, setMerchant] = useState("Demo Merchant")
+  const [amount, setAmount] = useState("")
+  const [merchant, setMerchant] = useState("")
+  const [upiId, setUpiId] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
   const [timestamp, setTimestamp] = useState(null)
   const [hasScanned, setHasScanned] = useState(false)
   const [isScanning, setIsScanning] = useState(false)
+  const [transactionId, setTransactionId] = useState("")
 
   function formatTimestamp(d) {
     const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
@@ -23,40 +25,132 @@ export default function App() {
     return `${day} ${mon} ${year} • ${hours}:${minutes} ${ampm}`
   }
 
+  // Parse UPI QR code format
+  const parseUpiQrCode = (data) => {
+    let parsedData = {
+      merchant: "",
+      upiId: "",
+      amount: ""
+    }
+
+    try {
+      // UPI QR codes typically follow this format:
+      // upi://pay?pa=merchant@upi&pn=MerchantName&am=100&cu=INR
+      // or just plain text with key-value pairs
+
+      if (data.includes('upi://pay')) {
+        // Parse UPI intent URL
+        const url = new URL(data)
+        parsedData.upiId = url.searchParams.get('pa') || ""
+        parsedData.merchant = url.searchParams.get('pn') || ""
+        parsedData.amount = url.searchParams.get('am') || ""
+        
+        // Decode merchant name if it's URL encoded
+        if (parsedData.merchant) {
+          parsedData.merchant = decodeURIComponent(parsedData.merchant)
+        }
+      } else if (data.trim().startsWith('{')) {
+        // JSON format
+        const obj = JSON.parse(data)
+        parsedData.merchant = obj.merchant || obj.payee || obj.pn || ""
+        parsedData.upiId = obj.upiId || obj.pa || obj.upi || ""
+        parsedData.amount = obj.amount || obj.am || ""
+      } else {
+        // Key-value pairs format (merchant:name, upiId:id@bank, amount:100)
+        const merchantMatch = data.match(/(?:merchant|pn|payee)[:=]\s*([^;,\n]+)/i)
+        const upiMatch = data.match(/(?:upiId|upi|pa)[:=]\s*([^;,\n]+)/i)
+        const amountMatch = data.match(/(?:amount|am)[:=]\s*([^;,\n]+)/i)
+        
+        if (merchantMatch) parsedData.merchant = merchantMatch[1].trim()
+        if (upiMatch) parsedData.upiId = upiMatch[1].trim()
+        if (amountMatch) parsedData.amount = amountMatch[1].trim()
+      }
+
+      // If we got a UPI ID but no merchant name, try to extract from UPI ID
+      if (parsedData.upiId && !parsedData.merchant) {
+        const upiName = parsedData.upiId.split('@')[0]
+        parsedData.merchant = upiName.charAt(0).toUpperCase() + upiName.slice(1)
+      }
+
+    } catch (e) {
+      console.error('Error parsing QR code:', e)
+      // Fallback: treat entire data as merchant name
+      parsedData.merchant = data
+    }
+
+    return parsedData
+  }
+
   const pay = async () => {
-    const now = new Date()
-    setTimestamp(formatTimestamp(now))
-    setShowSuccess(true)
+    if (!amount || parseFloat(amount) <= 0) {
+      alert('Please enter a valid amount')
+      return
+    }
+
+    if (!merchant) {
+      alert('Merchant name is required')
+      return
+    }
+
+    try {
+      // Call backend API to process payment
+      const response = await fetch('http://localhost:5000/pay', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: parseFloat(amount),
+          payeeName: merchant,
+          upiId: upiId || 'unknown@upi'
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.status === 'SUCCESS') {
+        const now = new Date()
+        setTimestamp(formatTimestamp(now))
+        setTransactionId(result.transactionId)
+        setShowSuccess(true)
+      } else if (result.status === 'PENDING') {
+        alert('Payment is pending. Please wait...')
+      } else {
+        alert('Payment failed. Please try again.')
+      }
+    } catch (error) {
+      console.error('Payment error:', error)
+      alert('Payment failed due to network error')
+    }
   }
 
   const simulateScan = () => {
-    // start camera-based scanning (show QrReader)
+    // start camera-based scanning
     setIsScanning(true)
   }
 
   const handleScan = (data) => {
     if (!data) return
-    // parse possible payloads: JSON or key:value pairs
-    let scannedMerchant = merchant
-    let scannedAmount = amount
-    try {
-      if (data.trim().startsWith('{')) {
-        const obj = JSON.parse(data)
-        scannedMerchant = obj.merchant || obj.payee || scannedMerchant
-        scannedAmount = obj.amount || scannedAmount
-      } else {
-        const m = data.match(/merchant[:=]\s*([^;,\n]+)/i)
-        const a = data.match(/amount[:=]\s*([^;,\n]+)/i)
-        if (m) scannedMerchant = m[1].trim()
-        if (a) scannedAmount = a[1].trim()
-      }
-    } catch (e) {
-      // fallback: treat full data as merchant name
-      scannedMerchant = data
+    
+    const parsed = parseUpiQrCode(data)
+    
+    console.log('Scanned QR data:', data)
+    console.log('Parsed data:', parsed)
+
+    // Set merchant name and UPI ID from QR code
+    if (parsed.merchant) {
+      setMerchant(parsed.merchant)
+    }
+    
+    if (parsed.upiId) {
+      setUpiId(parsed.upiId)
     }
 
-    setMerchant(scannedMerchant)
-    setAmount(scannedAmount)
+    // Set amount only if present in QR code and user hasn't entered one
+    if (parsed.amount && !amount) {
+      setAmount(parsed.amount)
+    }
+
     setIsScanning(false)
     setHasScanned(true)
   }
@@ -102,7 +196,7 @@ export default function App() {
     <div className="app-root">
       {!showSuccess && !hasScanned && (
         <div className="scan-container">
-          <h2>Scan QR</h2>
+          <h2>Scan QR Code</h2>
           <div className="camera-placeholder">
             {!isScanning && (
               <>
@@ -118,26 +212,56 @@ export default function App() {
             )}
           </div>
           <div className="scan-actions">
-            <button className="pay-btn" onClick={simulateScan} disabled={isScanning}>{isScanning ? 'Scanning…' : 'Scan'}</button>
-            <button className="pay-btn small" onClick={() => setHasScanned(true)} disabled={isScanning}>Enter details manually</button>
+            <button className="pay-btn" onClick={simulateScan} disabled={isScanning}>
+              {isScanning ? 'Scanning…' : 'Scan QR Code'}
+            </button>
+            <button className="pay-btn small" onClick={() => setHasScanned(true)} disabled={isScanning}>
+              Enter details manually
+            </button>
           </div>
         </div>
       )}
 
       {!showSuccess && hasScanned && (
         <div className="container">
-          <h2>Demo UPI Pay</h2>
+          <h2>Payment Details</h2>
+          
+          {merchant && (
+            <div className="info-display">
+              <strong>Merchant:</strong> {merchant}
+            </div>
+          )}
+          
+          {upiId && (
+            <div className="info-display">
+              <strong>UPI ID:</strong> {upiId}
+            </div>
+          )}
+
           <input
-            placeholder="Enter amount"
+            type="number"
+            placeholder="Enter amount (₹)"
             value={amount}
             onChange={e => setAmount(e.target.value)}
+            min="1"
+            step="0.01"
           />
-          <input
-            placeholder="Merchant name (e.g. Demo Merchant)"
-            value={merchant}
-            onChange={e => setMerchant(e.target.value)}
-          />
-          <button className="pay-btn" onClick={pay}>Pay</button>
+          
+          <button className="pay-btn" onClick={pay}>
+            Pay ₹{amount || '0'}
+          </button>
+          
+          <button 
+            className="pay-btn small" 
+            onClick={() => {
+              setHasScanned(false)
+              setMerchant("")
+              setUpiId("")
+              setAmount("")
+            }}
+          >
+            Scan different QR
+          </button>
         </div>
       )}
 
@@ -145,12 +269,15 @@ export default function App() {
         <PaymentSuccess
           amount={amount}
           payeeName={merchant}
-          txnId="TXN7F8A92KX"
+          txnId={transactionId}
           timestamp={timestamp}
           onDone={() => {
             setShowSuccess(false)
             setHasScanned(false)
-            window.location.href = '/'
+            setMerchant("")
+            setUpiId("")
+            setAmount("")
+            setTransactionId("")
           }}
         />
       )}
@@ -160,11 +287,10 @@ export default function App() {
 
 function PaymentSuccess({ amount, payeeName, txnId, timestamp, onDone }) {
   const handleShare = () => {
-    // Implement share functionality
     if (navigator.share) {
       navigator.share({
         title: 'Payment Receipt',
-        text: `Paid ₹${amount} to ${payeeName} via UPI`,
+        text: `Paid ₹${amount} to ${payeeName} via UPI\nTransaction ID: ${txnId}`,
       }).catch(err => console.log('Share failed', err))
     } else {
       alert('Payment receipt: ₹' + amount + ' paid to ' + payeeName)
