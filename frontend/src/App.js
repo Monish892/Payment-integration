@@ -13,6 +13,47 @@ export default function App() {
   const [transactionId, setTransactionId] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
 
+  // Audio context for payment success sound
+  const playSuccessSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      
+      // Create a pleasant success sound similar to GPay/PhonePe
+      const playTone = (frequency, startTime, duration, type = 'sine') => {
+        const oscillator = audioContext.createOscillator()
+        const gainNode = audioContext.createGain()
+        
+        oscillator.connect(gainNode)
+        gainNode.connect(audioContext.destination)
+        
+        oscillator.frequency.value = frequency
+        oscillator.type = type
+        
+        // Smooth envelope for natural sound
+        gainNode.gain.setValueAtTime(0, startTime)
+        gainNode.gain.linearRampToValueAtTime(0.25, startTime + 0.02)
+        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration)
+        
+        oscillator.start(startTime)
+        oscillator.stop(startTime + duration)
+      }
+      
+      const now = audioContext.currentTime
+      
+      // Multi-tone success sound (cheerful and pleasant)
+      // Similar to the "ding ding" sound in payment apps
+      playTone(784, now, 0.15, 'sine')           // G5 - First ding
+      playTone(1047, now + 0.12, 0.2, 'sine')    // C6 - Second ding (higher)
+      
+      // Add subtle harmony for richness
+      playTone(659, now, 0.15, 'sine')           // E5 - Harmony
+      playTone(880, now + 0.12, 0.2, 'sine')     // A5 - Harmony
+      
+    } catch (error) {
+      console.log('Audio not supported:', error)
+    }
+  }
+
   function formatTimestamp(d) {
     const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
     const day = d.getDate()
@@ -129,6 +170,7 @@ export default function App() {
         const now = new Date()
         setTimestamp(formatTimestamp(now))
         setTransactionId(result.transactionId)
+        playSuccessSound()  // Play success sound
         setShowSuccess(true)
       } else if (result.status === 'PENDING') {
         alert('Payment is pending. Please wait...')
@@ -148,6 +190,7 @@ export default function App() {
       setIsProcessing(false)
       setTimestamp(formatTimestamp(now))
       setTransactionId(txnId)
+      playSuccessSound()  // Play success sound
       setShowSuccess(true)
     }
   }
