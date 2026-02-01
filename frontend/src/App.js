@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react"
 import "./index.css"
 import { Html5Qrcode } from "html5-qrcode"
+import upiLogo from "./assets/upi-logo.webp"
+
 
 export default function App() {
   const [amount, setAmount] = useState("")
@@ -396,14 +398,14 @@ function PaymentSuccess({ amount, payeeName, txnId, timestamp, onDone }) {
         <div className="texts">
           <div className="primary">Payment successful</div>
           <div className="amount">₹{amount}</div>
-          <div className="payee">paid to {payeeName}</div>
+          <div className="payee">Paid to {payeeName}</div>
           <div className="tertiary">UPI transaction ID: {txnId}</div>
           <div className="timestamp">{timestamp}</div>
         </div>
 
         <div className="upi-branding">
           <div className="powered-by">POWERED BY</div>
-          <div className="upi-logo">UPI</div>
+          <img src={upiLogo} alt="UPI" className="upi-image" />
         </div>
 
         <div className="bottom-actions">
